@@ -1,0 +1,26 @@
+# Laugh Lab Pro - Stage 14: Collaborative Commenting
+
+## Summary
+
+Allows collaborators to leave comments anchored to specific parts of the script, facilitating asynchronous feedback and discussion on particular lines or sections. This is akin to Google Docs comments – a user can highlight a joke or a scene and add a remark (e.g. “Could we make this punchline stronger?”), and others can reply in a thread. Collaborative commenting provides a focused way to discuss improvements without altering the text, preserving notes for later resolution. It’s an essential tool for teams to review the script together and keep track of issues or ideas line-by-line.
+
+## Trigger / Function
+
+Available in any multi-user session (and possibly even for single-user as personal notes). Triggered by a UI action: e.g. selecting text and clicking “Add Comment” or clicking in the margin next to a line. The backend handles comments likely via a REST API or WebSocket as well. For example, a call POST /script/:id/comment with the content, line reference, and user. The server assigns an ID and broadcasts the new comment to collaborators (or in a pull model, clients regularly fetch comments). Each comment thread might be stored in a database with fields: script ID, anchor (could be line number or range), author, text, timestamp, and a thread ID for replies. A function addCommentReply(threadId, user, text) would handle replies.
+
+## Data Contract
+
+Input: Comment creation events including the location (anchor reference to script content) and the comment text. Output: Updated list of comments for the script. The data model likely groups comments by anchor. For example: {anchor: "Line 45-46", comments: [{id: 101, user: "Alice", text: "Funny line!", time: ...}, {id: 102, user: "Bob", text: "Maybe add a callback here", time: ...}]}. Anchors could also be tagged by an internal marker inserted in the text (like an invisible ID) to remain consistent even if the text shifts slightly. The comment threads are persisted so they remain across sessions until resolved or deleted. This stage doesn’t feed into analysis scores, but it intersects with the workflow as a collaboration artifact.
+
+## UI Display
+
+In the script editor UI, comments are typically indicated by an icon or highlight. For instance, a line with a comment might have a small speech-bubble icon on the margin. Clicking it (or hovering) would open the comment thread in a sidebar or overlay. The comment thread UI shows the conversation: original comment and any replies, each labeled with author and time. Users can enter a reply in a text box right there. Resolved comments might be hidden or greyed out. The design likely follows common conventions: highlighting the relevant text when a comment is selected, and perhaps a different color highlight if multiple comment threads overlap. A summary view might list all comments in the script (maybe in a panel accessible via a “Comments” button) to help navigate feedback. The overall look and feel should integrate with the dark theme and professional style of Laugh Lab Pro, using accent colors to mark comments (without distracting too much from the script).
+
+## QA / Validation Steps
+
+On a collaborative session, have one user add a comment to a line and verify all others see the comment icon appear at the correct location. Test replying: all participants should see new replies in real-time. Move or edit the script text around a commented section to ensure the comment either moves correctly with the text or the anchor is still intelligible (depends on implementation; some may anchor by original line numbers which could shift – a robust approach might anchor to a specific segment of text). Resolve a comment (if that feature exists) and ensure it’s no longer prominently visible (but perhaps accessible in a “Resolved” list). Check permission logic: maybe only the comment author or an admin can delete a comment – try different users to enforce that rule. Also, simulate many comments to see that the UI remains navigable (e.g. 50 comments shouldn’t all overlap confusingly). From the backend, verify that comments persist if the page is reloaded or a new session starts – they should be stored and retrieved properly. Security: ensure that a user from another project can’t fetch or post comments to a script they don’t have access to (test using direct API calls with invalid credentials).
+
+## Optional
+
+If email notifications or alerts for comments are part of the system (e.g. “Alice mentioned you in a comment”), those should be tested (maybe out of scope for just the web app spec, but worth noting). For developers, the commenting system might reuse an existing library or component; ensure it’s customized to integrate with our editor. Endpoints likely include GET /script/:id/comments and the aforementioned POST for new comments. In DevTools, one can inspect network calls to confirm comment payloads and responses. Also, test that comment data doesn’t leak into the analysis (it shouldn’t affect stage 1-10 metrics if properly isolated). This stage closes the loop on collaboration by providing a clear channel for feedback on specifics without altering the script text directly, making the collaborative process more structured and traceable.
+
